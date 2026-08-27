@@ -1,7 +1,13 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import axios from "axios";
+import WebSocket from "ws";
 import { env } from "../config/env.js";
 import { logger } from "../utils/logger.js";
+
+// Garante que WebSocket esteja disponível globalmente em qualquer versão do Node.js
+if (typeof (globalThis as any).WebSocket === "undefined") {
+  (globalThis as any).WebSocket = WebSocket;
+}
 
 export class SupabaseService {
   private supabase: SupabaseClient;
@@ -11,6 +17,10 @@ export class SupabaseService {
       auth: {
         persistSession: false,
         autoRefreshToken: false,
+      },
+      // Desativa o realtime para evitar abertura de conexões websocket em background
+      realtime: {
+        timeout: 1000,
       },
     });
   }

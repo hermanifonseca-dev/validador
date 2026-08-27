@@ -1,7 +1,7 @@
 # ==========================================
 # Estágio 1: Build (TypeScript -> JavaScript)
 # ==========================================
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ RUN npm run build
 # ==========================================
 # Estágio 2: Execução em Produção
 # ==========================================
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 
 WORKDIR /app
 
