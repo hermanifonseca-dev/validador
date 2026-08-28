@@ -31,20 +31,21 @@ export class WahaService {
         text,
       };
 
-      // Tenta rota padrão /api/sendText
-      try {
-        await this.client.post("/api/sendText", payload);
-        logger.success(`Mensagem de texto enviada com sucesso para ${chatId}`);
-        return true;
-      } catch (err: any) {
-        // Fallback para rota /api/{session}/chats/{chatId}/messages/text ou /api/messages
-        logger.warn(`Falha na rota /api/sendText (${err.message}). Tentando fallback...`);
-        await this.client.post(`/api/${session}/chats/${chatId}/messages/text`, { text });
-        logger.success(`Mensagem enviada via rota de fallback`);
-        return true;
-      }
+      await this.client.post("/api/sendText", payload);
+      logger.success(`Mensagem de texto enviada com sucesso para ${chatId}`);
+      return true;
     } catch (error: any) {
-      logger.error(`Erro ao enviar mensagem para ${chatId}:`, error.response?.data || error.message);
+      const errorData = error.response?.data;
+      const exceptionMsg = errorData?.exception?.message || errorData?.message || error.message;
+      
+      if (exceptionMsg && (exceptionMsg.includes("463") || exceptionMsg.includes("reachoutTimelock") || exceptionMsg.includes("ReachoutTimelock"))) {
+        logger.error(
+          `⚠️ [Reachout Timelock - Erro 463] O WhatsApp bloqueou temporariamente o envio para contatos novos/frios nesta sessão (${session}). ` +
+          `O contato ${chatId} precisa mandar um 'oi' primeiro ou aguardar o fim da restrição do WhatsApp.`
+        );
+      } else {
+        logger.error(`Erro ao enviar mensagem para ${chatId}:`, errorData || error.message);
+      }
       return false;
     }
   }
@@ -66,19 +67,21 @@ export class WahaService {
         file,
       };
 
-      // Tenta rota /api/sendFile
-      try {
-        await this.client.post("/api/sendFile", payload);
-        logger.success(`Arquivo enviado com sucesso para ${chatId}`);
-        return true;
-      } catch (err: any) {
-        logger.warn(`Falha na rota /api/sendFile (${err.message}). Tentando fallback...`);
-        await this.client.post(`/api/${session}/chats/${chatId}/messages/file`, payload);
-        logger.success(`Arquivo enviado via rota de fallback`);
-        return true;
-      }
+      await this.client.post("/api/sendFile", payload);
+      logger.success(`Arquivo enviado com sucesso para ${chatId}`);
+      return true;
     } catch (error: any) {
-      logger.error(`Erro ao enviar arquivo para ${chatId}:`, error.response?.data || error.message);
+      const errorData = error.response?.data;
+      const exceptionMsg = errorData?.exception?.message || errorData?.message || error.message;
+
+      if (exceptionMsg && (exceptionMsg.includes("463") || exceptionMsg.includes("reachoutTimelock") || exceptionMsg.includes("ReachoutTimelock"))) {
+        logger.error(
+          `⚠️ [Reachout Timelock - Erro 463] O WhatsApp bloqueou temporariamente o envio de arquivos para contatos novos/frios nesta sessão (${session}). ` +
+          `O contato ${chatId} precisa mandar uma mensagem primeiro ou aguardar a liberação do WhatsApp.`
+        );
+      } else {
+        logger.error(`Erro ao enviar arquivo para ${chatId}:`, errorData || error.message);
+      }
       return false;
     }
   }
